@@ -2,6 +2,10 @@ from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from django.views import generic
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import QuestionSerializer
+
 from .models import Question, Choice
 
 # Create your views here.
@@ -26,7 +30,6 @@ class IndexView(generic.ListView):
         """Return the last five published questions."""
         return Question.objects.order_by('-pub_date')[:5]
 
-
 class DetailView(generic.DetailView):
     model = Question
     template_name = 'polls/detail.html'
@@ -35,6 +38,26 @@ class DetailView(generic.DetailView):
 class ResultsView(generic.DetailView):
     model = Question
     template_name = 'polls/results.html'
+
+@api_view(['GET'])
+def get_questions(request):
+    """
+    Get the list of questions on our website
+    """
+    questions = Question.objects.all()
+    serializer = QuestionSerializer(questions, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+def update_question(request, pk):
+    """
+    Get the list of questions on our website
+    """
+    questions = Question.objects.get(id=pk)
+    serializer = QuestionSerializer(questions, data=request.data, partial=True)
+    if serializer.is_valid():
+        return Response(serializer.data)
+    return Response(status=400, data=serializer.errors)
 
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
